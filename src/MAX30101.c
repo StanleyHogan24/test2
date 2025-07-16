@@ -3,15 +3,6 @@
 #include <zephyr/drivers/i2c.h>
 #include "MAX30101.h"
 
-#define MAX30101_I2C_ADDR 0x57
-
-#define MAX30101_REG_MODE_CFG    0x09
-#define MAX30101_REG_LED1_PA     0x0C
-#define MAX30101_REG_LED2_PA     0x0D
-#define MAX30101_REG_LED3_PA     0x0E
-
-#define MAX30101_MODE_MULTI_LED  0x07
-#define MAX30101_LED_CURRENT_3MA 0x0F
 
 /* Assume sensor is connected to i2c0 */
 #define I2C_NODE DT_NODELABEL(i2c0)
@@ -53,5 +44,52 @@ int max30101_init(void)
 
     printk("MAX30101 initialized\n");
     return 0;
+}
+
+int max30101_write_reg(uint8_t reg, uint8_t value)
+{
+    return i2c_reg_write_byte_dt(&max30101_i2c, reg, value);
+}
+
+int max30101_read_reg(uint8_t reg, uint8_t *value)
+{
+    return i2c_reg_read_byte_dt(&max30101_i2c, reg, value);
+}
+
+int max30101_read_fifo(uint8_t *buf, size_t len)
+{
+    return i2c_burst_read_dt(&max30101_i2c, MAX30101_REG_FIFO_DATA, buf, len);
+}
+
+int max30101_reset_fifo(void)
+{
+    int err;
+
+    err = max30101_write_reg(MAX30101_REG_FIFO_WR_PTR, 0);
+    if (err) {
+        return err;
+    }
+    err = max30101_write_reg(MAX30101_REG_OVF_COUNTER, 0);
+    if (err) {
+        return err;
+    }
+    err = max30101_write_reg(MAX30101_REG_FIFO_RD_PTR, 0);
+    return err;
+}
+
+int max30101_set_led_amplitude(uint8_t red, uint8_t ir, uint8_t green)
+{
+    int err;
+
+    err = max30101_write_reg(MAX30101_REG_LED1_PA, red);
+    if (err) {
+        return err;
+    }
+    err = max30101_write_reg(MAX30101_REG_LED2_PA, ir);
+    if (err) {
+        return err;
+    }
+    err = max30101_write_reg(MAX30101_REG_LED3_PA, green);
+    return err;
 }
 

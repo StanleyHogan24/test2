@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 
 #include "bluetooth.h"
+#include "twi_master.h"
 #include "MAX30101.h"
 
 
@@ -84,6 +85,11 @@ static void blink_stop(void)
 int main(void)
 {
         int err;
+
+        err = twi_master_init();
+        if (err) {
+                return 0;
+        }
 
         err = bluetooth_init();
         if (err) {
